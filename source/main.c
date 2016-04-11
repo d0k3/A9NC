@@ -107,7 +107,7 @@ s32 recv_arm9_payload (void) {// careful here!!!
 			break;
 		}
         if (failcount >= 0x1000) {
-            printf(" (assumed complete)");
+            printf(" (timeout, assumed complete)");
             break;
         }
 	}
@@ -162,9 +162,8 @@ int main() {
     printf("[+] A9LH Netload Companion v0.0.1\n\n");
     while (true) {
         if (recv_arm9_payload()) {
-            printf("\n[x] Now rebooting...\n\n");
-            // quick_reboot();
-            wait_any_key();
+            printf("\n[x] Now rebooting...\n");
+            quick_reboot();
             break;
         } else {
             wait_any_key();
