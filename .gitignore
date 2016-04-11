@@ -30,3 +30,7 @@
 
 # Debug files
 *.dSYM/
+
+# User additions
+/build
+/output
