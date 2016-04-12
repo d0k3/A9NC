@@ -160,7 +160,7 @@ int main() {
     gfxInitDefault();
 	gfxSwapBuffers(); 
     gfxSet3D(false);
-    consoleInit(GFX_BOTTOM, NULL);
+    consoleInit(GFX_TOP, NULL);
     
     printf("[+] A9LH Netload Companion v0.0.1\n\n");
     while (true) {
