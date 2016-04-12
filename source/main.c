@@ -156,6 +156,7 @@ int main() {
     // Initialize services
 	srvInit();
 	aptInit();
+    acInit();
 	hidInit();
     gfxInitDefault();
 	gfxSwapBuffers(); 
@@ -177,6 +178,7 @@ int main() {
     // Deinitialize services
     gfxExit();
     hidExit();
+    acExit();
     aptExit();
     srvExit();
     return 0;
