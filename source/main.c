@@ -63,7 +63,7 @@ s32 recv_arm9_payload (void) {// careful here!!!
 
 	hidScanInput();
     u32 old_kDown = hidKeysDown();
-	while (1) {
+	do {
 		hidScanInput();
 		u32 kDown = hidKeysDown();
 		if (kDown != old_kDown) {
@@ -89,7 +89,8 @@ s32 recv_arm9_payload (void) {// careful here!!!
         printf("[!] Error: out of memory\n");
         return 0;
     }
-	while ((recvd = recv(clientfd, arm9payload_buf + total, ARM9_PAYLOAD_MAX_SIZE - total, 0)) != 0) {
+	while (aptMainLoop() && ((recvd = recv(clientfd, arm9payload_buf + total,
+      ARM9_PAYLOAD_MAX_SIZE - total, 0)) != 0)) {
 		if (recvd != -1) {
 			total += recvd;
 			printf(".");
@@ -113,7 +114,7 @@ s32 recv_arm9_payload (void) {// careful here!!!
             }
             break;
         }
-	}
+	} while (aptMainLoop());
 
 	fcntl(sockfd, F_SETFL, sflags & ~O_NONBLOCK);
 
