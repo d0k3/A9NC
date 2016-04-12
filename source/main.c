@@ -83,31 +83,34 @@ s32 recv_arm9_payload (void) {// careful here!!!
 
 	s32 recvd;
 	u32 total = 0;
-	s32 overflow = 0;
     s32 failcount = 0;
     arm9payload_buf = (u8*) malloc(ARM9_PAYLOAD_MAX_SIZE);
     if (!arm9payload_buf) {
         printf("[!] Error: out of memory\n");
         return 0;
     }
-	while ((recvd = recv(clientfd, arm9payload_buf + total,
-						 ARM9_PAYLOAD_MAX_SIZE - total, 0)) != 0) {
+	while ((recvd = recv(clientfd, arm9payload_buf + total, ARM9_PAYLOAD_MAX_SIZE - total, 0)) != 0) {
 		if (recvd != -1) {
 			total += recvd;
 			printf(".");
             failcount = 0;
 		} else if (errno != EAGAIN && errno != EWOULDBLOCK) {
-            overflow = 1;
+            total = 0;
 			printf("[!] Error: netloader error\n");
             break;
         } else failcount++;
 		if (total >= ARM9_PAYLOAD_MAX_SIZE) {
-			overflow = 1;
+			total = 0;
 			printf("[!] Error: invalid payload size\n");
 			break;
 		}
         if (failcount >= 0x1000) {
-            printf(" (timeout, assumed complete)");
+            if (total > 0) {
+                printf(" [!] timeout, assumed complete");
+            } else {
+                printf(" [!] timeout, failed!");
+                total = 0;
+            }
             break;
         }
 	}
@@ -115,7 +118,7 @@ s32 recv_arm9_payload (void) {// careful here!!!
 	fcntl(sockfd, F_SETFL, sflags & ~O_NONBLOCK);
 
 	printf("\n\n[x] Received %lu bytes in total\n", total);
-	arm9payload_size = overflow ? 0 : total;
+	arm9payload_size = total;
 
 	close(clientfd);
 	close(sockfd);
