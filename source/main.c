@@ -8,12 +8,48 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <zlib.h>
 #include "sochlp.h"
 #include "hid.h"
 
 #define PAYLOAD_PATH "/arm9testpayload.bin"
 #define NETWORK_PORT 80
 #define ARM9_PAYLOAD_MAX_SIZE 0x80000
+
+// from: http://stackoverflow.com/questions/4901842/in-memory-decompression-with-zlib
+int zlib_inflate(const void *src, int srcLen, void *dst, int dstLen) {
+    z_stream strm  = {0};
+    strm.total_in  = strm.avail_in  = srcLen;
+    strm.total_out = strm.avail_out = dstLen;
+    strm.next_in   = (Bytef *) src;
+    strm.next_out  = (Bytef *) dst;
+
+    strm.zalloc = Z_NULL;
+    strm.zfree  = Z_NULL;
+    strm.opaque = Z_NULL;
+
+    int err = -1;
+    int ret = -1;
+
+    // 15 window bits, and the +32 tells zlib to to detect if using gzip or zlib
+    err = inflateInit2(&strm, (15 + 32)); 
+    if (err == Z_OK) {
+        err = inflate(&strm, Z_FINISH);
+        if (err == Z_STREAM_END) {
+            ret = strm.total_out;
+        } else {
+             inflateEnd(&strm);
+             return err;
+        }
+    } else {
+        inflateEnd(&strm);
+        return err;
+    }
+
+    inflateEnd(&strm);
+    
+    return ret;
+}
 
 // adapted from: https://github.com/patois/Brahma/blob/master/source/brahma.c#L168-L259
 s32 recv_arm9_payload (void) {// careful here!!!
@@ -76,7 +112,7 @@ s32 recv_arm9_payload (void) {// careful here!!!
 		svcSleepThread(100000000);
 		if (clientfd > 0)
 			break;
-	}
+	} while (aptMainLoop());
 
 	printf("[x] Connection from %s:%d\n\n", inet_ntoa(client_addr.sin_addr),
         ntohs(client_addr.sin_port));
@@ -114,7 +150,7 @@ s32 recv_arm9_payload (void) {// careful here!!!
             }
             break;
         }
-	} while (aptMainLoop());
+	}
 
 	fcntl(sockfd, F_SETFL, sflags & ~O_NONBLOCK);
 
