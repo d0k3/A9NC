@@ -24,7 +24,7 @@ SOURCE_DIRS := source
 
 EXTRA_OUTPUT_FILES :=
 
-LIBRARY_DIRS := $(DEVKITPRO)/libctru $(DEVKITPRO)/portlibs/armv6k
+LIBRARY_DIRS := $(DEVKITPRO)/libctru $(DEVKITPRO)/portlibs/armv6k $(PORTLIBS)
 LIBRARIES := ctru m z
 
 BUILD_FLAGS := -DLIBKHAX_AS_LIB -DVERSION_STRING="\"`git describe --tags --abbrev=0`\""
