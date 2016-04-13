@@ -2,12 +2,14 @@
 #include <malloc.h>
 #include "sochlp.h"
 
+static u32 *SOC_buffer = 0;
+
 u32 soc_init (void) {
 	Result ret;
 	u32 result = 0;
 	
 	SOC_buffer = (u32*)memalign(SOC_ALIGN, SOC_BUFFERSIZE);
-	if (SOC_buffer != 0) {
+	if (SOC_buffer != NULL) {
 		ret = socInit(SOC_buffer, SOC_BUFFERSIZE);
 		if (ret == 0) {
 			result = 1;

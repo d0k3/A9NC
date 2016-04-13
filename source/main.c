@@ -8,54 +8,89 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <time.h>
 #include <zlib.h>
 #include "sochlp.h"
 #include "hid.h"
 
 #define PAYLOAD_PATH "/arm9testpayload.bin"
-#define NETWORK_PORT 80
+#define NETWORK_PORT 17491
 #define ARM9_PAYLOAD_MAX_SIZE 0x80000
+#define ZLIB_CHUNK (16 * 1024)
 
-// from: http://stackoverflow.com/questions/4901842/in-memory-decompression-with-zlib
-int zlib_inflate(const void *src, int srcLen, void *dst, int dstLen) {
-    z_stream strm  = {0};
-    strm.total_in  = strm.avail_in  = srcLen;
-    strm.total_out = strm.avail_out = dstLen;
-    strm.next_in   = (Bytef *) src;
-    strm.next_out  = (Bytef *) dst;
-
-    strm.zalloc = Z_NULL;
-    strm.zfree  = Z_NULL;
-    strm.opaque = Z_NULL;
-
-    int err = -1;
-    int ret = -1;
-
-    // 15 window bits, and the +32 tells zlib to to detect if using gzip or zlib
-    err = inflateInit2(&strm, (15 + 32)); 
-    if (err == Z_OK) {
-        err = inflate(&strm, Z_FINISH);
-        if (err == Z_STREAM_END) {
-            ret = strm.total_out;
-        } else {
-             inflateEnd(&strm);
-             return err;
+s32 recv_data (int sockfd, void *buf, size_t len, bool recv_all) {
+    u32 total = 0;
+    do {
+        s32 failcnt = 0;
+        time_t lastrcvtime = time(NULL);
+        s32 recvd = 0;
+        while (aptMainLoop() && ((recvd = recv(sockfd, buf + total, len - total, 0)) < 0)) {
+            failcnt++;
+            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                printf("[!] Error: netloader error\n");
+                return -1;
+            }
+            if ((failcnt >= 0x8000) && (time(NULL) - lastrcvtime >= 3)) {
+                printf("[!] Error: netloader timeout\n");
+                return -1;
+            }
         }
-    } else {
-        inflateEnd(&strm);
-        return err;
-    }
+        total += recvd;
+    } while (aptMainLoop() && recv_all && (total < len));
+    return total;
+}
 
-    inflateEnd(&strm);
+// adapted from https://github.com/smealum/3ds_hb_menu/blob/master/source/netloader.c#L86
+int recv_zlib_chunks (int sockfd, void *buf, size_t len) {
+    z_stream strm  = {0};
     
-    return ret;
+    strm.zalloc = Z_NULL;
+	strm.zfree = Z_NULL;
+	strm.opaque = Z_NULL;
+	strm.avail_in = 0;
+	strm.next_in = Z_NULL;
+
+    size_t total_rcvd = 0;
+    int err = -1;
+
+    err = inflateInit(&strm);
+	if (err != Z_OK) {
+		printf("[!] Error: inflateInit()\n");
+		return err;
+	}
+    
+    do {
+        u8 in[ZLIB_CHUNK];
+        size_t chunksize;
+        
+        if (recv_data(sockfd, &chunksize, 4, 1) != 4) break;
+        if (chunksize < 0 || chunksize > ZLIB_CHUNK) {
+            inflateEnd(&strm);
+            printf("[!] Error: bad chunk size\n");
+            return Z_DATA_ERROR;
+        }
+        if ((strm.avail_in = recv_data(sockfd, in, chunksize, 1)) != chunksize) break;
+        strm.next_in = in;
+        do {
+            strm.avail_out = ZLIB_CHUNK;
+            strm.next_out = buf + total_rcvd;
+            err = inflate(&strm, Z_NO_FLUSH);
+            if (err < 0) {
+                inflateEnd(&strm);
+                printf("[!] Error: inflate()\n");
+                return err;
+            }
+            total_rcvd += ZLIB_CHUNK - strm.avail_out;
+            printf("[x] Received: %u byte / %u byte\r", total_rcvd, len);
+        } while (aptMainLoop() && strm.avail_out == 0);
+    } while (aptMainLoop() && err != Z_STREAM_END);
+    printf("[x] Received: %u byte / %u byte\n", total_rcvd, len);
+    inflateEnd(&strm);
+    return (err == Z_STREAM_END) ? total_rcvd : Z_DATA_ERROR;
 }
 
 // adapted from: https://github.com/patois/Brahma/blob/master/source/brahma.c#L168-L259
-s32 recv_arm9_payload (void) {// careful here!!!
-	s32 arm9payload_size = 0;
-    u8* arm9payload_buf = NULL;
-    
+s32 recv_arm9_payload (void) {
 	s32 sockfd;
 	s32 clientfd;
 	struct sockaddr_in sa;
@@ -114,48 +149,45 @@ s32 recv_arm9_payload (void) {// careful here!!!
 			break;
 	} while (aptMainLoop());
 
-	printf("[x] Connection from %s:%d\n\n", inet_ntoa(client_addr.sin_addr),
+	printf("[x] Connection from %s:%d\n", inet_ntoa(client_addr.sin_addr),
         ntohs(client_addr.sin_port));
 
-	s32 recvd;
-	u32 total = 0;
-    s32 failcount = 0;
-    arm9payload_buf = (u8*) malloc(ARM9_PAYLOAD_MAX_SIZE);
-    if (!arm9payload_buf) {
+    
+    s32 filename_size = 0;
+	s32 arm9payload_size = 0;
+    u8* buf = (u8*) malloc(256 + ARM9_PAYLOAD_MAX_SIZE);
+    if (!buf) {
         printf("[!] Error: out of memory\n");
+        close(sockfd);
+        close(clientfd);
         return 0;
     }
-	while (aptMainLoop() && ((recvd = recv(clientfd, arm9payload_buf + total,
-      ARM9_PAYLOAD_MAX_SIZE - total, 0)) != 0)) {
-		if (recvd != -1) {
-			total += recvd;
-			printf(".");
-            failcount = 0;
-		} else if (errno != EAGAIN && errno != EWOULDBLOCK) {
-            total = 0;
-			printf("[!] Error: netloader error\n");
-            break;
-        } else failcount++;
-		if (total >= ARM9_PAYLOAD_MAX_SIZE) {
-			total = 0;
+    u8* filename = buf;
+    u8* arm9payload_buf = buf + 256;
+    
+    do { // handle 3DSlink transfer header and data
+        if (recv_data(clientfd, &filename_size, 4, 1) != 4) break;
+        if (filename_size < 0 || filename_size >= 256) {
+            printf("[!] Error: bad header\n");
+        }
+        if (recv_data(clientfd, filename, filename_size, 1) != filename_size) break;
+        if (recv_data(clientfd, &arm9payload_size, 4, 1) != 4) break;
+        if (arm9payload_size < 0 || arm9payload_size >= ARM9_PAYLOAD_MAX_SIZE) {
 			printf("[!] Error: invalid payload size\n");
+            arm9payload_size = 0;
 			break;
 		}
-        if (failcount >= 0x1000) {
-            if (total > 0) {
-                printf(" [!] timeout, assumed complete");
-            } else {
-                printf(" [!] timeout, failed!");
-                total = 0;
-            }
+        int response = 0;
+        send(clientfd, (int*) &response, 4, 0);
+        if (recv_zlib_chunks(clientfd, arm9payload_buf, arm9payload_size) !=
+            arm9payload_size) {
+            arm9payload_size = 0;
+            printf("[!] Error: corrupt transfer\n");
             break;
         }
-	}
+    } while(false);
 
 	fcntl(sockfd, F_SETFL, sflags & ~O_NONBLOCK);
-
-	printf("\n\n[x] Received %lu bytes in total\n", total);
-	arm9payload_size = total;
 
 	close(clientfd);
 	close(sockfd);
@@ -169,27 +201,27 @@ s32 recv_arm9_payload (void) {// careful here!!!
         FILE* fp = fopen(PAYLOAD_PATH, "wb");
         if (fp == NULL) {
             printf("[!] Error: cannot open file\n");
-            free(arm9payload_buf);
+            free(buf);
             return 0;
         }
         fwrite(arm9payload_buf, arm9payload_size, 1, fp);
         fclose(fp);
         printf("[x] Success!\n");
     }
-    free(arm9payload_buf);
+    free(buf);
     
 	return (arm9payload_size != 0);
 }
 
 // adapted from: https://github.com/AlbertoSONIC/3DS_Quick_Reboot/blob/master/source/main.c
-void quick_reboot(void) {
+void quick_reboot (void) {
     //Reboot Code
     aptOpenSession();
     APT_HardwareResetAsync();
     aptCloseSession();
 }
 
-int main() {
+int main () {
     // Initialize services
 	srvInit();
 	aptInit();
@@ -200,17 +232,11 @@ int main() {
     gfxSet3D(false);
     consoleInit(GFX_TOP, NULL);
     
-    printf("[+] A9LH Netload Companion v0.0.1\n\n");
-    while (true) {
-        if (recv_arm9_payload()) {
-            printf("\n[x] Now rebooting...\n");
-            quick_reboot();
-            break;
-        } else {
-            wait_any_key();
-            break;
-        }
-    }
+    printf("[+] A9LH Netload Companion v0.0.3\n\n");
+    if (recv_arm9_payload()) {
+        printf("\n[x] Now rebooting...\n");
+        quick_reboot();
+    } else wait_any_key();
     
     // Deinitialize services
     gfxExit();

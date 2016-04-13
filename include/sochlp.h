@@ -5,5 +5,3 @@
 
 u32 soc_init (void);
 u32 soc_exit (void);
-
-static u32 *SOC_buffer = 0;
