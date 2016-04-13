@@ -155,6 +155,7 @@ s32 recv_arm9_payload (void) {
     
     s32 filename_size = 0;
 	s32 arm9payload_size = 0;
+    s32 command_size = 0;
     u8* buf = (u8*) malloc(256 + ARM9_PAYLOAD_MAX_SIZE);
     if (!buf) {
         printf("[!] Error: out of memory\n");
@@ -171,6 +172,7 @@ s32 recv_arm9_payload (void) {
             printf("[!] Error: bad header\n");
         }
         if (recv_data(clientfd, filename, filename_size, 1) != filename_size) break;
+        printf("[x] Receiving \"%s\"\n", filename);
         if (recv_data(clientfd, &arm9payload_size, 4, 1) != 4) break;
         if (arm9payload_size < 0 || arm9payload_size >= ARM9_PAYLOAD_MAX_SIZE) {
 			printf("[!] Error: invalid payload size\n");
@@ -185,6 +187,9 @@ s32 recv_arm9_payload (void) {
             printf("[!] Error: corrupt transfer\n");
             break;
         }
+        send(clientfd, (int*) &response, 4, 0);
+        if (recv_data(clientfd, &command_size, 4, 1) != 4) break;
+        // any command line argument is ignored at that point
     } while(false);
 
 	fcntl(sockfd, F_SETFL, sflags & ~O_NONBLOCK);
