@@ -38,11 +38,11 @@ s32 recv_data (int sockfd, void *buf, size_t len, bool recv_all) {
         while (aptMainLoop() && ((recvd = recv(sockfd, buf + total, len - total, 0)) < 0)) {
             failcnt++;
             if (errno != EAGAIN && errno != EWOULDBLOCK) {
-                printf("[!] Error: netloader error\n");
+                printf("\n[!] Error: netloader error\n");
                 return -1;
             }
-            if ((failcnt >= 0x8000) && (time(NULL) - lastrcvtime >= 3)) {
-                printf("[!] Error: netloader timeout\n");
+            if ((failcnt >= 0x10000) && (time(NULL) - lastrcvtime >= 10)) {
+                printf("\n[!] Error: netloader timeout\n");
                 return -1;
             }
         }
