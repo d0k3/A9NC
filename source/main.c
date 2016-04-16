@@ -13,10 +13,21 @@
 #include "sochlp.h"
 #include "hid.h"
 
-#define PAYLOAD_PATH "/arm9testpayload.bin"
 #define NETWORK_PORT 17491
 #define ARM9_PAYLOAD_MAX_SIZE 0x80000
 #define ZLIB_CHUNK (16 * 1024)
+
+void write_to_file(const char* filename, u8* buf, u32 size) {
+    printf("[x] Writing %s...\n", filename);
+    FILE* fp = fopen(filename, "wb");
+    if (fp == NULL) {
+        printf("[!] Error: cannot open file\n");
+        free(buf);
+    } else {
+        fwrite(buf, size, 1, fp);
+        fclose(fp);
+    }
+}
 
 s32 recv_data (int sockfd, void *buf, size_t len, bool recv_all) {
     u32 total = 0;
@@ -202,15 +213,8 @@ s32 recv_arm9_payload (void) {
     
     // transfer to file
     if (arm9payload_size) {
-        printf("[x] Writing %s...\n", PAYLOAD_PATH);
-        FILE* fp = fopen(PAYLOAD_PATH, "wb");
-        if (fp == NULL) {
-            printf("[!] Error: cannot open file\n");
-            free(buf);
-            return 0;
-        }
-        fwrite(arm9payload_buf, arm9payload_size, 1, fp);
-        fclose(fp);
+        write_to_file("/arm9testpayload.bin", arm9payload_buf, arm9payload_size);
+        write_to_file("/aurei/payloads/left.bin", arm9payload_buf, arm9payload_size);
         printf("[x] Success!\n");
     }
     free(buf);
