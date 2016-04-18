@@ -13,6 +13,9 @@
 #include "sochlp.h"
 #include "hid.h"
 
+#define PAYLOAD_PATH0 "/arm9testpayload.bin"
+#define PAYLOAD_PATH1 "/aurei/payloads/left.bin"
+
 #define NETWORK_PORT 17491
 #define ARM9_PAYLOAD_MAX_SIZE 0x80000
 #define ZLIB_CHUNK (16 * 1024)
@@ -108,9 +111,29 @@ s32 recv_arm9_payload (void) {
 	struct sockaddr_in client_addr;
 	socklen_t addrlen = sizeof(client_addr);
 	s32 sflags = 0;
+    u32 wifi = 0;
     
     // init socket
     soc_init();
+
+    // wait for wifi to be available
+    // from: https://github.com/mtheall/ftpd/blob/master/source/ftp.c#L1414
+    if ((ACU_GetWifiStatus(&wifi) != 0) || (!wifi)) {
+        wifi = 0;
+        printf("[x] Waiting for Wifi...\n");
+        while(aptMainLoop() && !wifi) {
+            hidScanInput();
+            if(hidKeysDown() & KEY_B) {
+                printf("[!] Aborted\n");
+                return 0;
+            }
+
+            /* update the wifi status */
+            if (ACU_GetWifiStatus(&wifi) != 0) wifi = 0;
+        }
+        if (!wifi)
+            return 0;
+    }
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		printf("[!] Error: socket()\n");
@@ -144,11 +167,9 @@ s32 recv_arm9_payload (void) {
 	fcntl(sockfd, F_SETFL, sflags | O_NONBLOCK);
 
 	hidScanInput();
-    u32 old_kDown = hidKeysDown();
-	do {
+    do {
 		hidScanInput();
-		u32 kDown = hidKeysDown();
-		if (kDown != old_kDown) {
+		if (hidKeysDown() & KEY_B) {
 			printf("[!] Aborted\n");
 			close(sockfd);
 			return 0;
@@ -213,8 +234,8 @@ s32 recv_arm9_payload (void) {
     
     // transfer to file
     if (arm9payload_size) {
-        write_to_file("/arm9testpayload.bin", arm9payload_buf, arm9payload_size);
-        write_to_file("/aurei/payloads/left.bin", arm9payload_buf, arm9payload_size);
+        write_to_file(PAYLOAD_PATH0, arm9payload_buf, arm9payload_size);
+        write_to_file(PAYLOAD_PATH1, arm9payload_buf, arm9payload_size);
         printf("[x] Success!\n");
     }
     free(buf);
@@ -241,7 +262,7 @@ int main () {
     gfxSet3D(false);
     consoleInit(GFX_TOP, NULL);
     
-    printf("[+] A9LH Netload Companion v0.0.3\n\n");
+    printf("[+] A9LH Netload Companion v0.0.5\n\n");
     if (recv_arm9_payload()) {
         printf("\n[x] Now rebooting...\n");
         quick_reboot();
