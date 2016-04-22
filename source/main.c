@@ -262,7 +262,7 @@ int main () {
     gfxSet3D(false);
     consoleInit(GFX_TOP, NULL);
     
-    printf("[+] A9LH Netload Companion v0.0.5\n\n");
+    printf("[+] ARM9 Netload Companion v0.0.6\n\n");
     if (recv_arm9_payload()) {
         printf("\n[x] Now rebooting...\n");
         quick_reboot();

@@ -15,7 +15,7 @@ endif
 
 # COMMON CONFIGURATION #
 
-NAME := A9LHNetComp
+NAME := A9NC
 
 BUILD_DIR := build
 OUTPUT_DIR := output
@@ -33,9 +33,9 @@ RUN_FLAGS :=
 # 3DS CONFIGURATION #
 
 TITLE := $(NAME)
-DESCRIPTION := A9LH companion tool to receive payloads over wifi.
+DESCRIPTION := ARM9 companion tool to receive payloads over wifi.
 AUTHOR := d0k3
-PRODUCT_CODE := CTR-P-A9CT
+PRODUCT_CODE := CTR-P-A9NC
 UNIQUE_ID := 0x2871
 
 SYSTEM_MODE := 64MB
