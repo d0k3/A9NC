@@ -13,8 +13,8 @@
 #include "sochlp.h"
 #include "hid.h"
 
-#define PAYLOAD_PATH0 "/arm9testpayload.bin"
-#define PAYLOAD_PATH1 "/aurei/payloads/left.bin"
+#define PAYLOAD_PATH_UNI "/arm9testpayload.bin"
+#define PAYLOAD_PATH_ARN "/aurei/payloads/left.bin"
 
 #define NETWORK_PORT 17491
 #define ARM9_PAYLOAD_MAX_SIZE 0x80000
@@ -234,8 +234,8 @@ s32 recv_arm9_payload (void) {
     
     // transfer to file
     if (arm9payload_size) {
-        write_to_file(PAYLOAD_PATH0, arm9payload_buf, arm9payload_size);
-        write_to_file(PAYLOAD_PATH1, arm9payload_buf, arm9payload_size);
+        write_to_file(PAYLOAD_PATH_UNI, arm9payload_buf, arm9payload_size);
+        write_to_file(PAYLOAD_PATH_ARN, arm9payload_buf, arm9payload_size);
         printf("[x] Success!\n");
     }
     free(buf);
@@ -264,8 +264,10 @@ int main () {
     
     printf("[+] ARM9 Netload Companion v0.0.6\n\n");
     if (recv_arm9_payload()) {
-        printf("\n[x] Now rebooting...\n");
-        quick_reboot();
+        // printf("\n[x] Now rebooting...\n");
+        printf("\n[+] B to quit, any other key to reboot");
+        if (!(wait_key() & KEY_B))
+            quick_reboot();
     } else wait_any_key();
     
     // Deinitialize services
