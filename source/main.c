@@ -14,7 +14,7 @@
 #include "hid.h"
 
 #define PAYLOAD_PATH_UNI "/arm9testpayload.bin"
-#define PAYLOAD_PATH_ARN "/aurei/payloads/left.bin"
+#define PAYLOAD_PATH_LUM "/luma/payloads/left_A9NC.bin"
 
 #define NETWORK_PORT 17491
 #define ARM9_PAYLOAD_MAX_SIZE 0x80000
@@ -234,8 +234,8 @@ s32 recv_arm9_payload (void) {
     
     // transfer to file
     if (arm9payload_size) {
-        write_to_file(PAYLOAD_PATH_UNI, arm9payload_buf, arm9payload_size);
-        write_to_file(PAYLOAD_PATH_ARN, arm9payload_buf, arm9payload_size);
+        // write_to_file(PAYLOAD_PATH_UNI, arm9payload_buf, arm9payload_size);
+        write_to_file(PAYLOAD_PATH_LUM, arm9payload_buf, arm9payload_size);
         printf("[x] Success!\n");
     }
     free(buf);
@@ -262,12 +262,14 @@ int main () {
     gfxSet3D(false);
     consoleInit(GFX_TOP, NULL);
     
-    printf("[+] ARM9 Netload Companion v0.0.6\n\n");
+    printf("[+] ARM9 Netload Companion v0.0.7\n\n");
     if (recv_arm9_payload()) {
-        // printf("\n[x] Now rebooting...\n");
-        printf("\n[+] B to quit, any other key to reboot");
-        if (!(wait_key() & KEY_B))
-            quick_reboot();
+        printf("\n[+] B to quit, LEFT to reboot");
+        while (true) {
+            u32 pad_state = wait_key();
+            if (pad_state & KEY_B) break;
+            else if (pad_state & KEY_LEFT) quick_reboot();
+        }
     } else wait_any_key();
     
     // Deinitialize services
