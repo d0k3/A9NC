@@ -8,6 +8,6 @@ The file will be written to two places on your SD card:
 1. /arm9testpayload.bin
 2. /aurei/payloads/left.bin
 
-3dslink is included in devKitPro and also available [from here](http://davejmurphy.com/3dslink/). ARM9 Netload Companion will automatically reboot on a succesfull receive. [BootCTR9](https://github.com/hartmannaf/BootCtr9/releases) and [AuReiNAND](https://github.com/AuroraWright/AuReiNand) can easily be set up to run the received file at a button press.
+3dslink is included in devKitPro and also available [from here](http://davejmurphy.com/3dslink/). ARM9 Netload Companion will automatically reboot on a succesfull receive. [BootCTR9](https://github.com/hartmannaf/BootCtr9/releases) and [Luma3DS](https://github.com/AuroraWright/Luma3DS) can easily be set up to run the received file at a button press.
 
 Requires devKitPro, ctrulib and zlib to compile. For easy zlib installation [go here](https://github.com/devkitPro/3ds_portlibs).
