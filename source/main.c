@@ -13,8 +13,12 @@
 #include "sochlp.h"
 #include "hid.h"
 
-#define PAYLOAD_PATH_UNI "/arm9testpayload.bin"
-#define PAYLOAD_PATH_LUM "/luma/payloads/left_A9NC.bin"
+#define APP_NAME "ARM9 Netload Companion v0.0.8"
+
+#define PAYLOAD_PATH "/luma/payloads"
+// #define PAYLOAD_PATH_UNI "/arm9testpayload.bin"
+// #define PAYLOAD_PATH_LUM "/luma/payloads/left_A9NC.bin"
+// #define PAYLOAD_PATH_LDV "/luma/payloads/nlc.bin"
 
 #define NETWORK_PORT 17491
 #define ARM9_PAYLOAD_MAX_SIZE 0x80000
@@ -188,7 +192,7 @@ s32 recv_arm9_payload (void) {
     s32 filename_size = 0;
 	s32 arm9payload_size = 0;
     s32 command_size = 0;
-    u8* buf = (u8*) malloc(256 + ARM9_PAYLOAD_MAX_SIZE);
+    u8* buf = (u8*) malloc(512 + ARM9_PAYLOAD_MAX_SIZE);
     if (!buf) {
         printf("[!] Error: out of memory\n");
         close(sockfd);
@@ -196,7 +200,8 @@ s32 recv_arm9_payload (void) {
         return 0;
     }
     u8* filename = buf;
-    u8* arm9payload_buf = buf + 256;
+    u8* destname = buf + 256;
+    u8* arm9payload_buf = buf + 512;
     
     do { // handle 3DSlink transfer header and data
         if (recv_data(clientfd, &filename_size, 4, 1) != 4) break;
@@ -234,13 +239,42 @@ s32 recv_arm9_payload (void) {
     
     // transfer to file
     if (arm9payload_size) {
-        // write_to_file(PAYLOAD_PATH_UNI, arm9payload_buf, arm9payload_size);
-        write_to_file(PAYLOAD_PATH_LUM, arm9payload_buf, arm9payload_size);
-        printf("[x] Success!\n");
+        printf("\n[+] A to write nlc.bin\n");
+        printf("[+] \x1b to write left_A9NC.bin\n");
+        printf("[+] ? to write ?_%s\n", filename);
+        printf("[+] B to quit\n");
+        do {
+            u32 pad_state = wait_key();
+            if (pad_state & KEY_B) {
+                printf("[x] Cancelled\n");
+                arm9payload_size = -1;
+                break;
+            } else if (pad_state & KEY_A) {
+                snprintf((char*) destname, 255, "%s/nlc.bin", PAYLOAD_PATH);
+            }  else if (pad_state & KEY_LEFT) {
+                snprintf((char*) destname, 255, "%s/left_A9NC.bin", PAYLOAD_PATH);
+            } else if (pad_state & KEY_START) {
+                snprintf((char*) destname, 255, "%s/start_%s", PAYLOAD_PATH, (char*) filename);
+            }else if (pad_state & KEY_RIGHT) {
+                snprintf((char*) destname, 255, "%s/right_%s", PAYLOAD_PATH, (char*) filename);
+            } else if (pad_state & KEY_UP) {
+                snprintf((char*) destname, 255, "%s/up_%s", PAYLOAD_PATH, (char*) filename);
+            } else if (pad_state & KEY_DOWN) {
+                snprintf((char*) destname, 255, "%s/down_%s", PAYLOAD_PATH, (char*) filename);
+            } else if (pad_state & KEY_X) {
+                snprintf((char*) destname, 255, "%s/x_%s", PAYLOAD_PATH, (char*) filename);
+            } else if (pad_state & KEY_Y) {
+                snprintf((char*) destname, 255, "%s/y_%s", PAYLOAD_PATH, (char*) filename);
+            } else {
+                continue;
+            }
+            write_to_file((char*) destname, arm9payload_buf, arm9payload_size);
+            printf("[x] Success!\n");
+        } while(false);
     }
     free(buf);
     
-	return (arm9payload_size != 0);
+	return arm9payload_size;
 }
 
 // adapted from: https://github.com/AlbertoSONIC/3DS_Quick_Reboot/blob/master/source/main.c
@@ -262,15 +296,10 @@ int main () {
     gfxSet3D(false);
     consoleInit(GFX_TOP, NULL);
     
-    printf("[+] ARM9 Netload Companion v0.0.7\n\n");
-    if (recv_arm9_payload()) {
-        printf("\n[+] B to quit, LEFT to reboot");
-        while (true) {
-            u32 pad_state = wait_key();
-            if (pad_state & KEY_B) break;
-            else if (pad_state & KEY_LEFT) quick_reboot();
-        }
-    } else wait_any_key();
+    printf("[+] %s\n\n", APP_NAME);
+    s32 res = recv_arm9_payload();
+    if (res > 0) quick_reboot();
+    else if (res == 0) wait_any_key();
     
     // Deinitialize services
     gfxExit();
