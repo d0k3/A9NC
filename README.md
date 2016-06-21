@@ -4,10 +4,8 @@ A simple companion app to receive and run ARM9 payloads via CIA & A9LH
 To send a file, use:
 3dslink -a [IP] [payload name]
 
-The file will be written to two places on your SD card:
-1. /arm9testpayload.bin
-2. /aurei/payloads/left.bin
+3dslink is included in devKitPro and also available [from here](http://davejmurphy.com/3dslink/).
 
-3dslink is included in devKitPro and also available [from here](http://davejmurphy.com/3dslink/). ARM9 Netload Companion will automatically reboot on a succesfull receive. [BootCTR9](https://github.com/hartmannaf/BootCtr9/releases) and [Luma3DS](https://github.com/AuroraWright/Luma3DS) can easily be set up to run the received file at a button press.
+The file will be written to a place of your choice on your SD card. At the moment, the places to choose from are all in in the [Luma3DS](https://github.com/AuroraWright/Luma3DS) payloads folder. __Developers please contact me if you need A9NC to write to a different location__. 
 
 Requires devKitPro, ctrulib and zlib to compile. For easy zlib installation [go here](https://github.com/devkitPro/3ds_portlibs).
