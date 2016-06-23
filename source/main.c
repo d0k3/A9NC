@@ -13,12 +13,10 @@
 #include "sochlp.h"
 #include "hid.h"
 
-#define APP_NAME "ARM9 Netload Companion v0.0.8"
+#define APP_NAME "ARM9 Netload Companion v0.0.8s"
 
-#define PAYLOAD_PATH "/luma/payloads"
-// #define PAYLOAD_PATH_UNI "/arm9testpayload.bin"
-// #define PAYLOAD_PATH_LUM "/luma/payloads/left_A9NC.bin"
-// #define PAYLOAD_PATH_LDV "/luma/payloads/nlc.bin"
+#define PAYLOAD_PATH_LUMA "/luma/payloads"
+#define PAYLOAD_PATH_SHADOW "/homebrew"
 
 #define NETWORK_PORT 17491
 #define ARM9_PAYLOAD_MAX_SIZE 0x80000
@@ -239,9 +237,10 @@ s32 recv_arm9_payload (void) {
     
     // transfer to file
     if (arm9payload_size) {
-        printf("\n[+] A to write nlc.bin\n");
-        printf("[+] \x1b to write left_A9NC.bin\n");
-        printf("[+] ? to write ?_%s\n", filename);
+        printf("\n[+] A to write %s/nlc.bin\n", PAYLOAD_PATH_LUMA);
+        printf("[+] B to write %s/a9nc.bin\n", PAYLOAD_PATH_SHADOW);
+        printf("[+] \x1b to write %s/left_A9NC.bin\n", PAYLOAD_PATH_LUMA);
+        printf("[+] ? to write %s/?_%s\n", PAYLOAD_PATH_LUMA, filename);
         printf("[+] B to quit\n");
         do {
             u32 pad_state = wait_key();
@@ -250,21 +249,23 @@ s32 recv_arm9_payload (void) {
                 arm9payload_size = -1;
                 break;
             } else if (pad_state & KEY_A) {
-                snprintf((char*) destname, 255, "%s/nlc.bin", PAYLOAD_PATH);
-            }  else if (pad_state & KEY_LEFT) {
-                snprintf((char*) destname, 255, "%s/left_A9NC.bin", PAYLOAD_PATH);
+                snprintf((char*) destname, 255, "%s/nlc.bin", PAYLOAD_PATH_LUMA);
+            } else if (pad_state & KEY_B) {
+                snprintf((char*) destname, 255, "%s/a9nc.bin", PAYLOAD_PATH_SHADOW);
+            } else if (pad_state & KEY_LEFT) {
+                snprintf((char*) destname, 255, "%s/left_A9NC.bin", PAYLOAD_PATH_LUMA);
             } else if (pad_state & KEY_START) {
-                snprintf((char*) destname, 255, "%s/start_%s", PAYLOAD_PATH, (char*) filename);
-            }else if (pad_state & KEY_RIGHT) {
-                snprintf((char*) destname, 255, "%s/right_%s", PAYLOAD_PATH, (char*) filename);
+                snprintf((char*) destname, 255, "%s/start_%s", PAYLOAD_PATH_LUMA, (char*) filename);
+            } else if (pad_state & KEY_RIGHT) {
+                snprintf((char*) destname, 255, "%s/right_%s", PAYLOAD_PATH_LUMA, (char*) filename);
             } else if (pad_state & KEY_UP) {
-                snprintf((char*) destname, 255, "%s/up_%s", PAYLOAD_PATH, (char*) filename);
+                snprintf((char*) destname, 255, "%s/up_%s", PAYLOAD_PATH_LUMA, (char*) filename);
             } else if (pad_state & KEY_DOWN) {
-                snprintf((char*) destname, 255, "%s/down_%s", PAYLOAD_PATH, (char*) filename);
+                snprintf((char*) destname, 255, "%s/down_%s", PAYLOAD_PATH_LUMA, (char*) filename);
             } else if (pad_state & KEY_X) {
-                snprintf((char*) destname, 255, "%s/x_%s", PAYLOAD_PATH, (char*) filename);
+                snprintf((char*) destname, 255, "%s/x_%s", PAYLOAD_PATH_LUMA, (char*) filename);
             } else if (pad_state & KEY_Y) {
-                snprintf((char*) destname, 255, "%s/y_%s", PAYLOAD_PATH, (char*) filename);
+                snprintf((char*) destname, 255, "%s/y_%s", PAYLOAD_PATH_LUMA, (char*) filename);
             } else {
                 continue;
             }
