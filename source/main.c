@@ -250,7 +250,7 @@ s32 recv_arm9_payload (void) {
                 break;
             } else if (pad_state & KEY_A) {
                 snprintf((char*) destname, 255, "%s/nlc.bin", PAYLOAD_PATH_LUMA);
-            } else if (pad_state & KEY_B) {
+            } else if (pad_state & KEY_R) {
                 snprintf((char*) destname, 255, "%s/a9nc.bin", PAYLOAD_PATH_SHADOW);
             } else if (pad_state & KEY_LEFT) {
                 snprintf((char*) destname, 255, "%s/left_A9NC.bin", PAYLOAD_PATH_LUMA);
