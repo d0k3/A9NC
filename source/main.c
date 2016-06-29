@@ -278,14 +278,6 @@ s32 recv_arm9_payload (void) {
 	return arm9payload_size;
 }
 
-// adapted from: https://github.com/AlbertoSONIC/3DS_Quick_Reboot/blob/master/source/main.c
-void quick_reboot (void) {
-    //Reboot Code
-    aptOpenSession();
-    APT_HardwareResetAsync();
-    aptCloseSession();
-}
-
 int main () {
     // Initialize services
 	srvInit();
@@ -299,7 +291,7 @@ int main () {
     
     printf("[+] %s\n\n", APP_NAME);
     s32 res = recv_arm9_payload();
-    if (res > 0) quick_reboot();
+    if (res > 0) APT_HardwareResetAsync(); // reboot
     else if (res == 0) wait_any_key();
     
     // Deinitialize services
