@@ -238,7 +238,7 @@ s32 recv_arm9_payload (void) {
     // transfer to file
     if (arm9payload_size) {
         printf("\n[+] A to write %s/nlc.bin\n", PAYLOAD_PATH_LUMA);
-        printf("[+] B to write %s/a9nc.bin\n", PAYLOAD_PATH_SHADOW);
+        printf("[+] R to write %s/a9nc.bin\n", PAYLOAD_PATH_SHADOW);
         printf("[+] \x1b to write %s/left_A9NC.bin\n", PAYLOAD_PATH_LUMA);
         printf("[+] ? to write %s/?_%s\n", PAYLOAD_PATH_LUMA, filename);
         printf("[+] B to quit\n");
