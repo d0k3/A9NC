@@ -6,6 +6,6 @@ To send a file, use:
 
 3dslink is included in devKitPro and also available [from here](http://davejmurphy.com/3dslink/).
 
-The file will be written to a place of your choice on your SD card. At the moment, the places to choose from are all in in the [Luma3DS](https://github.com/AuroraWright/Luma3DS) payloads folder. __Developers please contact me if you need A9NC to write to a different location__. 
+The file will be written to a place of your choice on your SD card. At the moment, most places to choose from are in in the [Luma3DS](https://github.com/AuroraWright/Luma3DS) payloads folder. __Developers please contact me if you need A9NC to write to a different location__. 
 
 Requires devKitPro, ctrulib and zlib to compile. For easy zlib installation [go here](https://github.com/devkitPro/3ds_portlibs).
