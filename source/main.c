@@ -13,7 +13,7 @@
 #include "sochlp.h"
 #include "hid.h"
 
-#define APP_NAME "ARM9 Netload Companion v0.0.8s"
+#define APP_NAME "ARM9 Netload Companion v0.0.9"
 
 #define PAYLOAD_PATH_LUMA "/luma/payloads"
 #define PAYLOAD_PATH_SHADOW "/homebrew"
@@ -239,6 +239,7 @@ s32 recv_arm9_payload (void) {
     if (arm9payload_size) {
         printf("\n[+] A to write %s/nlc.bin\n", PAYLOAD_PATH_LUMA);
         printf("[+] R to write %s/a9nc.bin\n", PAYLOAD_PATH_SHADOW);
+        printf("[+] L to write /a9nc.bin\n");
         printf("[+] \x1b to write %s/left_A9NC.bin\n", PAYLOAD_PATH_LUMA);
         printf("[+] ? to write %s/?_%s\n", PAYLOAD_PATH_LUMA, filename);
         printf("[+] B to quit\n");
@@ -252,6 +253,8 @@ s32 recv_arm9_payload (void) {
                 snprintf((char*) destname, 255, "%s/nlc.bin", PAYLOAD_PATH_LUMA);
             } else if (pad_state & KEY_R) {
                 snprintf((char*) destname, 255, "%s/a9nc.bin", PAYLOAD_PATH_SHADOW);
+            } else if (pad_state & KEY_L) {
+                snprintf((char*) destname, 255, "/a9nc.bin");
             } else if (pad_state & KEY_LEFT) {
                 snprintf((char*) destname, 255, "%s/left_A9NC.bin", PAYLOAD_PATH_LUMA);
             } else if (pad_state & KEY_START) {
