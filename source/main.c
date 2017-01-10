@@ -17,6 +17,7 @@
 
 #define PAYLOAD_PATH_LUMA "/luma/payloads"
 #define PAYLOAD_PATH_SHADOW "/homebrew"
+#define PAYLOAD_PATH_CHAINLOADER "/A9NC"
 
 #define NETWORK_PORT 17491
 #define ARM9_PAYLOAD_MAX_SIZE 0x80000
@@ -239,7 +240,7 @@ s32 recv_arm9_payload (void) {
     if (arm9payload_size) {
         printf("\n[+] A to write %s/nlc.bin\n", PAYLOAD_PATH_LUMA);
         printf("[+] R to write %s/a9nc.bin\n", PAYLOAD_PATH_SHADOW);
-        printf("[+] L to write /a9nc.bin\n");
+        printf("[+] L to write %s/temp.bin\n", PAYLOAD_PATH_CHAINLOADER);
         printf("[+] \x1b to write %s/left_A9NC.bin\n", PAYLOAD_PATH_LUMA);
         printf("[+] ? to write %s/?_%s\n", PAYLOAD_PATH_LUMA, filename);
         printf("[+] B to quit\n");
@@ -254,7 +255,7 @@ s32 recv_arm9_payload (void) {
             } else if (pad_state & KEY_R) {
                 snprintf((char*) destname, 255, "%s/a9nc.bin", PAYLOAD_PATH_SHADOW);
             } else if (pad_state & KEY_L) {
-                snprintf((char*) destname, 255, "/a9nc.bin");
+                snprintf((char*) destname, 255, "%s/temp.bin", PAYLOAD_PATH_CHAINLOADER);
             } else if (pad_state & KEY_LEFT) {
                 snprintf((char*) destname, 255, "%s/left_A9NC.bin", PAYLOAD_PATH_LUMA);
             } else if (pad_state & KEY_START) {
