@@ -34,3 +34,5 @@
 # User additions
 /build
 /output
+arm9loaderhax.bin
+arm9loaderhax_si.bin
