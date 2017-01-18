@@ -243,10 +243,10 @@ s32 recv_arm9_payload (void) {
         printf("[+] L to write %s/temp.bin\n", PAYLOAD_PATH_CHAINLOADER);
         printf("[+] \x1b to write %s/left_A9NC.bin\n", PAYLOAD_PATH_LUMA);
         printf("[+] ? to write %s/?_%s\n", PAYLOAD_PATH_LUMA, filename);
-        printf("[+] B to quit\n");
+        printf("[+] Start to quit\n");
         do {
             u32 pad_state = wait_key();
-            if (pad_state & KEY_B) {
+            if (pad_state & KEY_START) {
                 printf("[x] Cancelled\n");
                 arm9payload_size = -1;
                 break;
