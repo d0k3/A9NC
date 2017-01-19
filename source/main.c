@@ -13,11 +13,12 @@
 #include "sochlp.h"
 #include "hid.h"
 
-#define APP_NAME "ARM9 Netload Companion v0.0.9"
+#define APP_NAME "ARM9 Netload Companion v0.1.0"
 
 #define PAYLOAD_PATH_LUMA "/luma/payloads"
 #define PAYLOAD_PATH_SHADOW "/homebrew"
 #define PAYLOAD_PATH_CHAINLOADER "/A9NC"
+// #define AUTO_LAUNCH
 
 #define NETWORK_PORT 17491
 #define ARM9_PAYLOAD_MAX_SIZE 0x80000
@@ -238,14 +239,20 @@ s32 recv_arm9_payload (void) {
     
     // transfer to file
     if (arm9payload_size) {
+        #ifndef AUTO_LAUNCH
         printf("\n[+] A to write %s/nlc.bin\n", PAYLOAD_PATH_LUMA);
         printf("[+] R to write %s/a9nc.bin\n", PAYLOAD_PATH_SHADOW);
         printf("[+] L to write %s/temp.bin\n", PAYLOAD_PATH_CHAINLOADER);
         printf("[+] \x1b to write %s/left_A9NC.bin\n", PAYLOAD_PATH_LUMA);
         printf("[+] ? to write %s/?_%s\n", PAYLOAD_PATH_LUMA, filename);
         printf("[+] B to quit\n");
+        #endif
         do {
+            #ifndef AUTO_LAUNCH
             u32 pad_state = wait_key();
+            #else
+            u32 pad_state = KEY_L;
+            #endif
             if (pad_state & KEY_B) {
                 printf("[x] Cancelled\n");
                 arm9payload_size = -1;
