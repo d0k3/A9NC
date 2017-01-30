@@ -25,7 +25,7 @@
 
 u32 check_chainloader(void) {
     const char* filename = PAYLOAD_PATH_CHAINLOADER "/payload.bin";
-    FILE* fp = fopen(filename, "wb");
+    FILE* fp = fopen(filename, "rb");
     if (fp) {
         fclose(fp);
         return 1;
