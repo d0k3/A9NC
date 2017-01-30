@@ -13,16 +13,25 @@
 #include "sochlp.h"
 #include "hid.h"
 
-#define APP_NAME "ARM9 Netload Companion v0.1.0"
+#define APP_NAME "ARM9 Netload Companion v0.1.1"
 
 #define PAYLOAD_PATH_LUMA "/luma/payloads"
 #define PAYLOAD_PATH_SHADOW "/homebrew"
 #define PAYLOAD_PATH_CHAINLOADER "/A9NC"
-// #define AUTO_LAUNCH
 
 #define NETWORK_PORT 17491
 #define ARM9_PAYLOAD_MAX_SIZE 0x80000
 #define ZLIB_CHUNK (16 * 1024)
+
+u32 check_chainloader(void) {
+    const char* filename = PAYLOAD_PATH_CHAINLOADER "/payload.bin";
+    FILE* fp = fopen(filename, "wb");
+    if (fp) {
+        fclose(fp);
+        return 1;
+    }
+    return 0;
+}
 
 void write_to_file(const char* filename, u8* buf, u32 size) {
     printf("[x] Writing %s...\n", filename);
@@ -116,6 +125,7 @@ s32 recv_arm9_payload (void) {
 	socklen_t addrlen = sizeof(client_addr);
 	s32 sflags = 0;
     u32 wifi = 0;
+    u32 autolaunch = check_chainloader();
     
     // init socket
     soc_init();
@@ -162,6 +172,7 @@ s32 recv_arm9_payload (void) {
 	}
 
 	printf("[x] IP %s:%d\n", inet_ntoa(sa.sin_addr), NETWORK_PORT);
+    printf("[?] mode: %s (set with R)\r", (autolaunch) ? "auto" : "ask");
 
 	sflags = fcntl(sockfd, F_GETFL);
 	if (sflags == -1) {
@@ -174,10 +185,15 @@ s32 recv_arm9_payload (void) {
     do {
 		hidScanInput();
 		if (hidKeysDown() & KEY_B) {
+            printf("                               \r");
 			printf("[!] Aborted\n");
 			close(sockfd);
 			return 0;
-		}
+		} else if (hidKeysDown() & KEY_R) {
+            autolaunch = !autolaunch;
+            printf("[?] mode: %s (set with R)   \r", (autolaunch) ? "auto" : "ask");
+        }
+       
 
 		clientfd = accept(sockfd, (struct sockaddr*)&client_addr, &addrlen);
 		svcSleepThread(100000000);
@@ -239,20 +255,16 @@ s32 recv_arm9_payload (void) {
     
     // transfer to file
     if (arm9payload_size) {
-        #ifndef AUTO_LAUNCH
-        printf("\n[+] A to write %s/nlc.bin\n", PAYLOAD_PATH_LUMA);
-        printf("[+] R to write %s/a9nc.bin\n", PAYLOAD_PATH_SHADOW);
-        printf("[+] L to write %s/temp.bin\n", PAYLOAD_PATH_CHAINLOADER);
-        printf("[+] \x1b to write %s/left_A9NC.bin\n", PAYLOAD_PATH_LUMA);
-        printf("[+] ? to write %s/?_%s\n", PAYLOAD_PATH_LUMA, filename);
-        printf("[+] B to quit\n");
-        #endif
+        if (!autolaunch) {
+            printf("\n[+] A to write %s/nlc.bin\n", PAYLOAD_PATH_LUMA);
+            printf("[+] R to write %s/a9nc.bin\n", PAYLOAD_PATH_SHADOW);
+            printf("[+] L to write %s/temp.bin\n", PAYLOAD_PATH_CHAINLOADER);
+            printf("[+] \x1b to write %s/left_A9NC.bin\n", PAYLOAD_PATH_LUMA);
+            printf("[+] ? to write %s/?_%s\n", PAYLOAD_PATH_LUMA, filename);
+            printf("[+] B to quit\n");
+        }
         do {
-            #ifndef AUTO_LAUNCH
-            u32 pad_state = wait_key();
-            #else
-            u32 pad_state = KEY_L;
-            #endif
+            u32 pad_state = (autolaunch) ? KEY_L : wait_key();
             if (pad_state & KEY_B) {
                 printf("[x] Cancelled\n");
                 arm9payload_size = -1;
