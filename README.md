@@ -14,13 +14,9 @@ Requires devKitARM, libctru and zlib to compile. For easy zlib installation [go 
 
 ## Sighax instructions
 
-Use [SafeB9SInstaller](https://github.com/d0k3/SafeB9SInstaller/releases) to install alternative boot9strap [from here](https://github.com/d0k3/boot9strap). A9NC can write to `/bootonce.bin`, which is loaded one time, then deleted from the SD card.
+Use [SafeB9SInstaller](https://github.com/d0k3/SafeB9SInstaller/releases) to install alternative boot9strap [from here](https://github.com/d0k3/boot9strap/releases). A9NC can write to `/bootonce.bin`, which is loaded one time, then deleted from the SD card.
 
 
 ## A9LH chainloader instructions
 
-The chainloader onyl works on arm9loaderhax at the time of writing. To use the chainloader, you need to move your default payload (usually your CFW) at `/A9NC/payload.bin` and copy the chainloader payload to either `arm9loaderhax_si.bin` or `arm9loaderhax.bin`. Typically, `arm9loaderhax_si.bin` will be the right choice, because screen init is not implemented yet.
-
-Todo for the chainloader:
-  * Adding in screen init
-  * Confirm compatibility for all CFW (only tested on Luma at the time of writing, it most likely include Reinand and Luma's forks such as Puma)
+The chainloader only works on arm9loaderhax at the time of writing and is not required for sighaxed systems. To use the chainloader, you need to move your default payload (usually your CFW) to `/A9NC/payload.bin` and copy the chainloader payload to either `arm9loaderhax_si.bin` or `arm9loaderhax.bin`. Typically, `arm9loaderhax_si.bin` will be the right choice, because screen init is not implemented yet.
