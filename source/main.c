@@ -15,30 +15,18 @@
 
 #define APP_NAME "ARM9 Netload Companion v0.1.2"
 
+#define PAYLOAD_PATH_GM9 "/gm9/payloads"
 #define PAYLOAD_PATH_LUMA "/luma/payloads"
-#define PAYLOAD_PATH_SHADOW "/homebrew"
-#define PAYLOAD_PATH_CHAINLOADER "/A9NC"
 
 #define NETWORK_PORT 17491
 #define ARM9_PAYLOAD_MAX_SIZE 0x80000
 #define ZLIB_CHUNK (16 * 1024)
-
-u32 check_boot9strap(void) {
-    const char* filename = "/boot.firm";
-    FILE* fp = fopen(filename, "rb");
-    if (fp) {
-        fclose(fp);
-        return 1;
-    }
-    return 0;
-}
 
 void write_to_file(const char* filename, u8* buf, u32 size) {
     printf("[x] Writing %s...\n", filename);
     FILE* fp = fopen(filename, "wb");
     if (fp == NULL) {
         printf("[!] Error: cannot open file\n");
-        free(buf);
     } else {
         fwrite(buf, size, 1, fp);
         fclose(fp);
@@ -125,7 +113,7 @@ s32 recv_arm9_payload (void) {
 	socklen_t addrlen = sizeof(client_addr);
 	s32 sflags = 0;
     u32 wifi = 0;
-    u32 b9slaunch = check_boot9strap();
+    u32 gm9launch = 1;
     
     // init socket
     soc_init();
@@ -172,7 +160,7 @@ s32 recv_arm9_payload (void) {
 	}
 
 	printf("[x] IP %s:%d\n", inet_ntoa(sa.sin_addr), NETWORK_PORT);
-    printf("[?] mode: %s (set with R)\r", (b9slaunch) ? "b9s" : "ask");
+    printf("[?] mode: %s (set with R)\r", (gm9launch) ? "gm9" : "ask");
 
 	sflags = fcntl(sockfd, F_GETFL);
 	if (sflags == -1) {
@@ -190,8 +178,8 @@ s32 recv_arm9_payload (void) {
 			close(sockfd);
 			return 0;
 		} else if (hidKeysDown() & KEY_R) {
-            b9slaunch = !b9slaunch;
-            printf("[?] mode: %s (set with R)   \r", (b9slaunch) ? "b9s" : "ask");
+            gm9launch = !gm9launch;
+            printf("[?] mode: %s (set with R)   \r", (gm9launch) ? "gm9" : "ask");
         }
        
 
@@ -208,7 +196,8 @@ s32 recv_arm9_payload (void) {
     s32 filename_size = 0;
 	s32 arm9payload_size = 0;
     s32 command_size = 0;
-    u8* buf = (u8*) malloc(512 + ARM9_PAYLOAD_MAX_SIZE);
+    u8 *buf = (u8*) linearMemAlign(512 + ARM9_PAYLOAD_MAX_SIZE, 0x400000);
+    // u8* buf = (u8*) malloc(512 + ARM9_PAYLOAD_MAX_SIZE);
     if (!buf) {
         printf("[!] Error: out of memory\n");
         close(sockfd);
@@ -253,28 +242,31 @@ s32 recv_arm9_payload (void) {
     // exit socket
     soc_exit();
     
+    // flush data cache
+    GSPGPU_FlushDataCache(buf, 512 + ARM9_PAYLOAD_MAX_SIZE);
+
     // transfer to file
     if (arm9payload_size) {
-        if (!b9slaunch) {
-            printf("\n[+] A to write /bootonce.firm\n");
-            printf("[+] R to write %s/a9nc.firm\n", PAYLOAD_PATH_SHADOW);
-            printf("[+] L to write %s/temp.bin\n", PAYLOAD_PATH_CHAINLOADER);
+        if (!gm9launch) {
+            printf("\n[+] A to write to FCRAM\n");
+            printf("[+] L to write /bootonce.firm\n");
+            printf("[+] R to write %s/%s\n", PAYLOAD_PATH_GM9, filename);
             printf("[+] \x1b to write %s/left_A9NC.firm\n", PAYLOAD_PATH_LUMA);
             printf("[+] ? to write %s/?_%s\n", PAYLOAD_PATH_LUMA, filename);
             printf("[+] B to quit\n");
         }
         do {
-            u32 pad_state = (b9slaunch) ? KEY_A : wait_key();
+            u32 pad_state = (gm9launch) ? KEY_A : wait_key();
             if (pad_state & KEY_B) {
                 printf("[x] Cancelled\n");
                 arm9payload_size = -1;
                 break;
             } else if (pad_state & KEY_A) {
+                *destname = '\0';
+            } else if (pad_state & KEY_L) {
                 snprintf((char*) destname, 255, "/bootonce.firm");
             } else if (pad_state & KEY_R) {
-                snprintf((char*) destname, 255, "%s/a9nc.firm", PAYLOAD_PATH_SHADOW);
-            } else if (pad_state & KEY_L) {
-                snprintf((char*) destname, 255, "%s/temp.bin", PAYLOAD_PATH_CHAINLOADER);
+                snprintf((char*) destname, 255, "%s/%s", PAYLOAD_PATH_GM9, (char*) filename);
             } else if (pad_state & KEY_LEFT) {
                 snprintf((char*) destname, 255, "%s/left_A9NC.firm", PAYLOAD_PATH_LUMA);
             } else if (pad_state & KEY_START) {
@@ -292,11 +284,11 @@ s32 recv_arm9_payload (void) {
             } else {
                 continue;
             }
-            write_to_file((char*) destname, arm9payload_buf, arm9payload_size);
+            if (*destname) write_to_file((char*) destname, arm9payload_buf, arm9payload_size);
             printf("[x] Success!\n");
         } while(false);
     }
-    free(buf);
+    // free(buf);
     
 	return arm9payload_size;
 }
