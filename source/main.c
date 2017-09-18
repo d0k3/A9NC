@@ -13,7 +13,7 @@
 #include "sochlp.h"
 #include "hid.h"
 
-#define APP_NAME "ARM9 Netload Companion v0.1.2"
+#define APP_NAME "ARM9 Netload Companion v0.1.3"
 
 #define PAYLOAD_PATH_GM9 "/gm9/payloads"
 #define PAYLOAD_PATH_LUMA "/luma/payloads"
@@ -263,6 +263,7 @@ s32 recv_arm9_payload (void) {
                 break;
             } else if (pad_state & KEY_A) {
                 *destname = '\0';
+                snprintf((char*) buf, 255, "A9NC"); // magic number
             } else if (pad_state & KEY_L) {
                 snprintf((char*) destname, 255, "/bootonce.firm");
             } else if (pad_state & KEY_R) {
@@ -288,7 +289,6 @@ s32 recv_arm9_payload (void) {
             printf("[x] Success!\n");
         } while(false);
     }
-    // free(buf);
     
 	return arm9payload_size;
 }
