@@ -253,6 +253,7 @@ s32 recv_arm9_payload (void) {
             printf("[+] R to write %s/%s\n", PAYLOAD_PATH_GM9, filename);
             printf("[+] \x1b to write %s/left_A9NC.firm\n", PAYLOAD_PATH_LUMA);
             printf("[+] ? to write %s/?_%s\n", PAYLOAD_PATH_LUMA, filename);
+            printf("[+] START to write /ntrboot.firm\n");
             printf("[+] B to quit\n");
         }
         do {
@@ -264,14 +265,14 @@ s32 recv_arm9_payload (void) {
             } else if (pad_state & KEY_A) {
                 *destname = '\0';
                 snprintf((char*) buf, 255, "A9NC"); // magic number
+            } else if (pad_state & KEY_START) {
+                snprintf((char*) destname, 255, "/ntrboot.firm");
             } else if (pad_state & KEY_L) {
                 snprintf((char*) destname, 255, "/bootonce.firm");
             } else if (pad_state & KEY_R) {
                 snprintf((char*) destname, 255, "%s/%s", PAYLOAD_PATH_GM9, (char*) filename);
             } else if (pad_state & KEY_LEFT) {
                 snprintf((char*) destname, 255, "%s/left_A9NC.firm", PAYLOAD_PATH_LUMA);
-            } else if (pad_state & KEY_START) {
-                snprintf((char*) destname, 255, "%s/start_%s", PAYLOAD_PATH_LUMA, (char*) filename);
             } else if (pad_state & KEY_RIGHT) {
                 snprintf((char*) destname, 255, "%s/right_%s", PAYLOAD_PATH_LUMA, (char*) filename);
             } else if (pad_state & KEY_UP) {
