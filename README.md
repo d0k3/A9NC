@@ -1,22 +1,13 @@
 # A9NC - ARM9 Netload Companion
-A simple companion app to receive and run ARM9 payloads via CIA & A9LH
+A simple companion app to receive and run ARM9 payloads via CIA & GM9 bootloader
 
-To send a file, use:
+To send a firm, use:
 3dslink -a [IP] [payload name]
 
 3dslink is included in devKitARM and also available [from here](http://davejmurphy.com/3dslink/).
 
-The file will be written to a place of your choice on your SD card. At the moment, most places to choose from are in in the [Luma3DS](https://github.com/AuroraWright/Luma3DS) payloads folder.
-__Developers please contact me if you need A9NC to write to a different location__. 
+In default _gm9 mode_, the firm will be written to a specific location in FCRAM, where it can then be loaded from via the GodMode9 bootloader (see below). A9NC also has an _ask mode_, where the firm will be written to a place of your choice on your SD card.
+
+To setup your system for _gm9 mode_, use [GodMode9](https://github.com/d0k3/GodMode9/releases) to install the GodMode9 firm to FIRM0. GodMode9 will then act as a bootloader for typical boot.firm locations unless R+LEFT is pressed on boot. It will also - without any required keypresses - automatically detect the firm in FCRAM and boot into it.
 
 Requires devKitARM, libctru and zlib to compile. For easy zlib installation [go here](https://github.com/devkitPro/3ds_portlibs).
-
-
-## Sighax instructions
-
-Use [SafeB9SInstaller](https://github.com/d0k3/SafeB9SInstaller/releases) to install alternative boot9strap [from here](https://github.com/d0k3/boot9strap/releases). A9NC can write to `/bootonce.bin`, which is loaded one time, then deleted from the SD card.
-
-
-## A9LH chainloader instructions
-
-The chainloader only works on arm9loaderhax at the time of writing and is not required for sighaxed systems. To use the chainloader, you need to move your default payload (usually your CFW) to `/A9NC/payload.bin` and copy the chainloader payload to either `arm9loaderhax_si.bin` or `arm9loaderhax.bin`. Typically, `arm9loaderhax_si.bin` will be the right choice, because screen init is not implemented yet.
