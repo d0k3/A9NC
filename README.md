@@ -6,7 +6,7 @@ To send a firm, use:
 
 3dslink is included in devKitARM and also available [from here](http://davejmurphy.com/3dslink/).
 
-In default _gm9 mode_, the firm will be written to a specific location in FCRAM, where it can then be loaded from via the GodMode9 bootloader (see below). A9NC also has an _ask mode_, where the firm will be written to a place of your choice on your SD card.
+In default _gm9 mode_, the firm will be written to a specific location in FCRAM, where it can then be loaded from via the GodMode9 bootloader (see below). A9NC also has an _ask mode_, where the firm will be written to a place of your choice on your SD card. In _ask mode_, you can make A9NC work with [Luma3DS](https://github.com/AuroraWright/Luma3DS/releases) and that [boot9strap fork](https://github.com/d0k3/boot9strap/releases/tag/1.2%2Bbootonce).
 
 To setup your system for _gm9 mode_, use [GodMode9](https://github.com/d0k3/GodMode9/releases) to install the GodMode9 firm to FIRM0. GodMode9 will then act as a bootloader for typical boot.firm locations unless R+LEFT is pressed on boot. It will also - without any required keypresses - automatically detect the firm in FCRAM and boot into it.
 
