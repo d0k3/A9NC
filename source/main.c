@@ -19,7 +19,7 @@
 #define PAYLOAD_PATH_LUMA "/luma/payloads"
 
 #define NETWORK_PORT 17491
-#define ARM9_PAYLOAD_MAX_SIZE 0x80000
+#define ARM9_PAYLOAD_MAX_SIZE (0x400000 - 0x200)
 #define ZLIB_CHUNK (16 * 1024)
 
 void write_to_file(const char* filename, u8* buf, u32 size) {
