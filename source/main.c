@@ -13,14 +13,46 @@
 #include "sochlp.h"
 #include "hid.h"
 
-#define APP_NAME "ARM9 Netload Companion v0.1.3"
+#define APP_NAME "ARM9 Netload Companion v0.1.3a"
 
 #define PAYLOAD_PATH_GM9 "/gm9/payloads"
 #define PAYLOAD_PATH_LUMA "/luma/payloads"
 
 #define NETWORK_PORT 17491
 #define ARM9_PAYLOAD_MAX_SIZE (0x400000 - 0x200)
+#define ARM9_PAYLOAD_OFFSET (0x1000) // FCRAM + 0x1000
 #define ZLIB_CHUNK (16 * 1024)
+
+void *firmBuf = NULL;
+
+void __attribute__((weak)) __appInit(void) {
+    // allocate FIRM buffer
+    firmBuf = linearAlloc(ARM9_PAYLOAD_OFFSET + ARM9_PAYLOAD_MAX_SIZE);
+    
+    // Initialize services
+    srvInit();
+    aptInit();
+    acInit();
+    hidInit();
+
+    fsInit();
+    sdmcInit();
+}
+
+void __attribute__((weak)) __appExit(void) {
+    // Exit services
+    sdmcExit();
+    fsExit();
+
+    hidExit();
+    acExit();
+    aptExit();
+    srvExit();
+    
+    // flush and free FIRM buffer
+    GSPGPU_FlushDataCache(firmBuf, ARM9_PAYLOAD_MAX_SIZE);
+    linearFree(firmBuf);
+}
 
 void write_to_file(const char* filename, u8* buf, u32 size) {
     printf("[x] Writing %s...\n", filename);
@@ -60,19 +92,19 @@ int recv_zlib_chunks (int sockfd, void *buf, size_t len) {
     z_stream strm  = {0};
     
     strm.zalloc = Z_NULL;
-	strm.zfree = Z_NULL;
-	strm.opaque = Z_NULL;
-	strm.avail_in = 0;
-	strm.next_in = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+    strm.avail_in = 0;
+    strm.next_in = Z_NULL;
 
     size_t total_rcvd = 0;
     int err = -1;
 
     err = inflateInit(&strm);
-	if (err != Z_OK) {
-		printf("[!] Error: inflateInit()\n");
-		return err;
-	}
+    if (err != Z_OK) {
+        printf("[!] Error: inflateInit()\n");
+        return err;
+    }
     
     do {
         u8 in[ZLIB_CHUNK];
@@ -106,12 +138,12 @@ int recv_zlib_chunks (int sockfd, void *buf, size_t len) {
 
 // adapted from: https://github.com/patois/Brahma/blob/master/source/brahma.c#L168-L259
 s32 recv_arm9_payload (void) {
-	s32 sockfd;
-	s32 clientfd;
-	struct sockaddr_in sa;
-	struct sockaddr_in client_addr;
-	socklen_t addrlen = sizeof(client_addr);
-	s32 sflags = 0;
+    s32 sockfd;
+    s32 clientfd;
+    struct sockaddr_in sa;
+    struct sockaddr_in client_addr;
+    socklen_t addrlen = sizeof(client_addr);
+    s32 sflags = 0;
     u32 wifi = 0;
     u32 gm9launch = 1;
     
@@ -137,76 +169,67 @@ s32 recv_arm9_payload (void) {
             return 0;
     }
 
-	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		printf("[!] Error: socket()\n");
-		return 0;
-	}
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("[!] Error: socket()\n");
+        return 0;
+    }
 
-	memset(&sa, 0x00, sizeof(sa));
-	sa.sin_family = AF_INET;
-	sa.sin_port = htons(NETWORK_PORT);
-	sa.sin_addr.s_addr = gethostid();
+    memset(&sa, 0x00, sizeof(sa));
+    sa.sin_family = AF_INET;
+    sa.sin_port = htons(NETWORK_PORT);
+    sa.sin_addr.s_addr = gethostid();
 
-	if (bind(sockfd, (struct sockaddr*)&sa, sizeof(sa)) != 0) {
-		printf("[!] Error: bind()\n");
-		close(sockfd);
-		return 0;
-	}
+    if (bind(sockfd, (struct sockaddr*)&sa, sizeof(sa)) != 0) {
+        printf("[!] Error: bind()\n");
+        close(sockfd);
+        return 0;
+    }
 
-	if (listen(sockfd, 1) != 0) {
-		printf("[!] Error: listen()\n");
-		close(sockfd);
-		return 0;
-	}
+    if (listen(sockfd, 1) != 0) {
+        printf("[!] Error: listen()\n");
+        close(sockfd);
+        return 0;
+    }
 
-	printf("[x] IP %s:%d\n", inet_ntoa(sa.sin_addr), NETWORK_PORT);
+    printf("[x] IP %s:%d\n", inet_ntoa(sa.sin_addr), NETWORK_PORT);
     printf("[?] mode: %s (set with R)\r", (gm9launch) ? "gm9" : "ask");
 
-	sflags = fcntl(sockfd, F_GETFL);
-	if (sflags == -1) {
-		printf("[!] Error: fcntl() (1)\n");
-		close(sockfd);
-	}
-	fcntl(sockfd, F_SETFL, sflags | O_NONBLOCK);
+    sflags = fcntl(sockfd, F_GETFL);
+    if (sflags == -1) {
+        printf("[!] Error: fcntl() (1)\n");
+        close(sockfd);
+    }
+    fcntl(sockfd, F_SETFL, sflags | O_NONBLOCK);
 
-	hidScanInput();
+    hidScanInput();
     do {
-		hidScanInput();
-		if (hidKeysDown() & KEY_B) {
+        hidScanInput();
+        if (hidKeysDown() & KEY_B) {
             printf("                               \r");
-			printf("[!] Aborted\n");
-			close(sockfd);
-			return 0;
-		} else if (hidKeysDown() & KEY_R) {
+            printf("[!] Aborted\n");
+            close(sockfd);
+            return 0;
+        } else if (hidKeysDown() & KEY_R) {
             gm9launch = !gm9launch;
             printf("[?] mode: %s (set with R)   \r", (gm9launch) ? "gm9" : "ask");
         }
        
 
-		clientfd = accept(sockfd, (struct sockaddr*)&client_addr, &addrlen);
-		svcSleepThread(100000000);
-		if (clientfd > 0)
-			break;
-	} while (aptMainLoop());
+        clientfd = accept(sockfd, (struct sockaddr*)&client_addr, &addrlen);
+        svcSleepThread(100000000);
+        if (clientfd > 0)
+            break;
+    } while (aptMainLoop());
 
-	printf("[x] Connection from %s:%d\n", inet_ntoa(client_addr.sin_addr),
+    printf("[x] Connection from %s:%d\n", inet_ntoa(client_addr.sin_addr),
         ntohs(client_addr.sin_port));
-
     
+    char filename[256];
+    char destname[256];
     s32 filename_size = 0;
-	s32 arm9payload_size = 0;
+    s32 arm9payload_size = 0;
     s32 command_size = 0;
-    u8 *buf = (u8*) linearMemAlign(512 + ARM9_PAYLOAD_MAX_SIZE, 0x400000);
-    // u8* buf = (u8*) malloc(512 + ARM9_PAYLOAD_MAX_SIZE);
-    if (!buf) {
-        printf("[!] Error: out of memory\n");
-        close(sockfd);
-        close(clientfd);
-        return 0;
-    }
-    u8* filename = buf;
-    u8* destname = buf + 256;
-    u8* arm9payload_buf = buf + 512;
+    u8* arm9payload_buf = (u8*) firmBuf + ARM9_PAYLOAD_OFFSET;
     
     do { // handle 3DSlink transfer header and data
         if (recv_data(clientfd, &filename_size, 4, 1) != 4) break;
@@ -217,10 +240,10 @@ s32 recv_arm9_payload (void) {
         printf("[x] Receiving \"%s\"\n", filename);
         if (recv_data(clientfd, &arm9payload_size, 4, 1) != 4) break;
         if (arm9payload_size < 0 || arm9payload_size >= ARM9_PAYLOAD_MAX_SIZE) {
-			printf("[!] Error: invalid payload size\n");
+            printf("[!] Error: invalid payload size\n");
             arm9payload_size = 0;
-			break;
-		}
+            break;
+        }
         int response = 0;
         send(clientfd, (int*) &response, 4, 0);
         if (recv_zlib_chunks(clientfd, arm9payload_buf, arm9payload_size) !=
@@ -234,16 +257,13 @@ s32 recv_arm9_payload (void) {
         // any command line argument is ignored at that point
     } while(false);
 
-	fcntl(sockfd, F_SETFL, sflags & ~O_NONBLOCK);
+    fcntl(sockfd, F_SETFL, sflags & ~O_NONBLOCK);
 
-	close(clientfd);
-	close(sockfd);
+    close(clientfd);
+    close(sockfd);
 
     // exit socket
     soc_exit();
-    
-    // flush data cache
-    GSPGPU_FlushDataCache(buf, 512 + ARM9_PAYLOAD_MAX_SIZE);
 
     // transfer to file
     if (arm9payload_size) {
@@ -264,7 +284,6 @@ s32 recv_arm9_payload (void) {
                 break;
             } else if (pad_state & KEY_A) {
                 *destname = '\0';
-                snprintf((char*) buf, 255, "A9NC"); // magic number
             } else if (pad_state & KEY_START) {
                 snprintf((char*) destname, 255, "/ntrboot.firm");
             } else if (pad_state & KEY_L) {
@@ -291,30 +310,29 @@ s32 recv_arm9_payload (void) {
         } while(false);
     }
     
-	return arm9payload_size;
+    return arm9payload_size;
 }
 
 int main () {
-    // Initialize services
-	srvInit();
-	aptInit();
-    acInit();
-	hidInit();
+    // Initialize GFX
     gfxInitDefault();
-	gfxSwapBuffers(); 
+    gfxSwapBuffers(); 
     gfxSet3D(false);
     consoleInit(GFX_TOP, NULL);
     
     printf("[+] %s\n\n", APP_NAME);
+    
+    if (!firmBuf) {
+        printf("[!] Error: out of memory\n");
+        return 0;
+    }
+    printf("[x] firm@%08lX\n", (u32) firmBuf + ARM9_PAYLOAD_OFFSET);
+    
     s32 res = recv_arm9_payload();
     if (res > 0) APT_HardwareResetAsync(); // reboot
     else if (res == 0) wait_any_key();
     
-    // Deinitialize services
+    // Deinitialize GFX
     gfxExit();
-    hidExit();
-    acExit();
-    aptExit();
-    srvExit();
     return 0;
 }
