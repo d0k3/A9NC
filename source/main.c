@@ -13,7 +13,7 @@
 #include "sochlp.h"
 #include "hid.h"
 
-#define APP_NAME "ARM9 Netload Companion v0.1.3a"
+#define APP_NAME "ARM9 Netload Companion v0.1.4"
 
 #define PAYLOAD_PATH_GM9 "/gm9/payloads"
 #define PAYLOAD_PATH_LUMA "/luma/payloads"
@@ -192,7 +192,7 @@ s32 recv_arm9_payload (void) {
     }
 
     printf("[x] IP %s:%d\n", inet_ntoa(sa.sin_addr), NETWORK_PORT);
-    printf("[?] mode: %s (set with R)\r", (gm9launch) ? "gm9" : "ask");
+    printf("[?] mode: %s (set with R)\r", (gm9launch) ? "fcram" : "ask");
 
     sflags = fcntl(sockfd, F_GETFL);
     if (sflags == -1) {
@@ -211,7 +211,7 @@ s32 recv_arm9_payload (void) {
             return 0;
         } else if (hidKeysDown() & KEY_R) {
             gm9launch = !gm9launch;
-            printf("[?] mode: %s (set with R)   \r", (gm9launch) ? "gm9" : "ask");
+            printf("[?] mode: %s (set with R)   \r", (gm9launch) ? "fcram" : "ask");
         }
        
 
