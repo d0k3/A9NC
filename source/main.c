@@ -327,6 +327,10 @@ int main () {
         return 0;
     }
     printf("[x] firm@%08lX\n", (u32) firmBuf + ARM9_PAYLOAD_OFFSET);
+    if ((u32) firmBuf != 0x14000000) { // must be at the start of FCRAM
+        printf("[!] Bad firm location\n");
+        return 0;
+    }
     
     s32 res = recv_arm9_payload();
     if (res > 0) APT_HardwareResetAsync(); // reboot
